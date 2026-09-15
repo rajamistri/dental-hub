@@ -24,11 +24,17 @@
       1. the layout cannot overflow horizontally (vertical-only reveals, panel parked
          at 100%, breakable long strings) and every fixed control keeps a guaranteed
          minimum gap from the screen edge instead of trusting env() to be non-zero;
-      2. a runtime PIN GUARD watches the navbar while you scroll — if a browser
-         anchors fixed boxes to the document instead of the screen, the navbar is
-         switched to position:sticky and the floating buttons are positioned by
-         scroll-tracked transforms, so the UI stays on screen on any device.
-    Open the site with ?debug appended to see any overflow culprit in the console.
+      2. the navbar is STICKY, not fixed — sticky elements live in the document flow,
+         so a browser that mis-anchors position:fixed cannot detach the navbar. If a
+         browser cannot do sticky either, the runtime adds .dx-pin-fixed and restores
+         a fixed navbar with the body offset;
+      3. a runtime POSITION GUARD measures the floating buttons (and the mobile menu
+         panel and its backdrop) with absolute tests — no scroll-delta guessing. If
+         they are drawn below the screen or at the document bottom, it adds
+         .dx-floats-tracked and positions them itself with scroll-tracked transforms.
+         It re-checks on load, scroll, resize, rotation, tab focus and on a timer.
+    Open the site with ?debug appended to see what the guard decided, and with ?pin
+    to force the tracked mode while testing on a device.
 -->
 <title>Aira Multispeciality Dental Clinic — Trusted Dental Care in Bardhaman, West Bengal</title>
 <meta name="description" content="Aira Multispeciality Dental Clinic, Bardhaman (Burdwan), West Bengal — dental implants, braces, root canal treatment, teeth whitening and complete family dental care with modern digital technology, painless treatment and easy EMI options.">
@@ -137,7 +143,10 @@
 html{-webkit-text-size-adjust:100%;scroll-behavior:smooth;scroll-padding-top:calc(var(--hdr-h) + 16px)}
 body{
   margin:0;
-  padding-top:var(--hdr-h);
+  /* the navbar is sticky (see sections 4 and 15b): it already occupies its own
+     space in the flow, so no padding offset is needed here. The fixed-header
+     fallback adds the offset back when required. */
+  padding-top:0;
   font-family:var(--font-ui);
   font-size:clamp(15px,.55vw + 13.6px,16.5px);
   line-height:1.72;
@@ -245,7 +254,10 @@ button{font-family:inherit}
 .dx-bg__smile{position:absolute;left:50%;transform:translateX(-50%);top:34vh;width:min(90vw,1150px);opacity:.34}
 
 /* ---------- 4. HEADER ---------- */
-.dx-header{position:fixed;top:0;left:0;right:0;z-index:1030}
+/* Sticky rather than fixed: some Android browsers anchor position:fixed boxes to
+   the document once a page can scroll sideways, which makes the navbar scroll
+   away. A sticky element lives in the flow, so it can never be detached. */
+.dx-header{position:sticky;top:0;left:0;right:0;z-index:1030}
 .dx-topbar{
   background:var(--ink);color:rgba(232,244,251,.76);font-size:.79rem;
   height:38px;overflow:hidden;transition:height .45s var(--ease),opacity .3s var(--ease);
@@ -1292,20 +1304,19 @@ textarea.dx-input{min-height:118px;resize:vertical}
 /* never let a decorative/fixed layer widen the document */
 .dx-bg,.dx-scrim,.dx-panel,.dx-header,.dx-wa,.dx-totop,.dx-themes,.dx-wa-callout{max-width:100vw}
 
-/* ---------- 15b. PIN FALLBACK ----------
-   Some Android builds anchor position:fixed boxes to the document rather than the
-   screen when a page can scroll sideways, so the navbar scrolls away and the
-   floating buttons sink to the document bottom. If the runtime guard detects that
-   pattern it adds .dx-pin-fallback here: the navbar becomes sticky (in-flow, so a
-   browser cannot lose it) and the floating buttons are positioned by scroll-
-   tracked transforms instead of bottom/right. */
-html.dx-pin-fallback .dx-header{position:sticky;top:0}
-html.dx-pin-fallback body{padding-top:0!important}
-html.dx-pin-fallback .dx-header::before{position:absolute}
-html.dx-pin-fallback .dx-wa,
-html.dx-pin-fallback .dx-totop,
-html.dx-pin-fallback .dx-themes,
-html.dx-pin-fallback .dx-wa-callout{
+/* ---------- 15b. PIN STRATEGY ----------
+   Default: the navbar is sticky (section 4) and cannot be detached by the Android
+   position:fixed bug. If a browser cannot do sticky either, the runtime adds
+   .dx-pin-fixed and the navbar returns to fixed with the body offset restored.
+   Floating buttons stay fixed by default; if the runtime measures that fixed boxes
+   are being anchored to the document instead of the screen, it adds
+   .dx-floats-tracked and positions them itself with scroll-tracked transforms. */
+html.dx-pin-fixed .dx-header{position:fixed;top:0;left:0;right:0}
+html.dx-pin-fixed body{padding-top:var(--hdr-h)!important}
+html.dx-floats-tracked .dx-wa,
+html.dx-floats-tracked .dx-totop,
+html.dx-floats-tracked .dx-themes,
+html.dx-floats-tracked .dx-wa-callout{
   transition:opacity .35s var(--ease),visibility .35s var(--ease),box-shadow .4s var(--ease)!important;
   will-change:transform
 }
@@ -2742,15 +2753,16 @@ html.dx-pin-fallback .dx-wa-callout{
   var root = document.documentElement;
   var SCROLL_OFFSET = 0;
 
-  function headerHeight() {
-    return (header ? header.offsetHeight : 70) + 14;
-  }
   function setHeaderVar() {
-    var h = Math.round(headerHeight() - 14);
+    if (!header) { SCROLL_OFFSET = 70; return; }
+    var h = Math.round(header.offsetHeight);
     root.style.setProperty('--hdr-h', h + 'px');
-    document.body.style.paddingTop = h + 'px';
     SCROLL_OFFSET = h + 14;
+    /* the navbar is sticky, so it already occupies its own space; only the
+       fixed-header fallback needs the body pushed down by the header height */
+    document.body.style.paddingTop = root.classList.contains('dx-pin-fixed') ? h + 'px' : '0px';
   }
+  window.dxSetHeaderVar = setHeaderVar;
 
   /* ---------- smooth scrolling with header offset ---------- */
   function scrollToTarget(target) {
@@ -2792,6 +2804,7 @@ html.dx-pin-fallback .dx-wa-callout{
     scrim.classList.add('is-open');
     document.body.classList.add('dx-lock');
     if (burger) burger.setAttribute('aria-expanded', 'true');
+    if (typeof window.dxSyncMenu === 'function') window.dxSyncMenu();
     if (closeBtn) closeBtn.focus();
   }
   function closeMenu() {
@@ -2802,6 +2815,7 @@ html.dx-pin-fallback .dx-wa-callout{
     scrim.classList.remove('is-open');
     document.body.classList.remove('dx-lock');
     if (burger) burger.setAttribute('aria-expanded', 'false');
+    if (typeof window.dxSyncMenu === 'function') window.dxSyncMenu();
     window.setTimeout(function () { if (!openState) scrim.hidden = true; }, 420);
     if (lastFocused && typeof lastFocused.focus === 'function') lastFocused.focus();
   }
@@ -3183,8 +3197,8 @@ html.dx-pin-fallback .dx-wa-callout{
   var GUARD = 8;
 
   function clamp() {
-    /* the pin fallback positions the controls itself — leave it alone */
-    if (document.documentElement.classList.contains('dx-pin-fallback')) return;
+    /* the position guard is tracking the buttons itself — leave them alone */
+    if (document.documentElement.classList.contains('dx-floats-tracked')) return;
     var vw = document.documentElement.clientWidth || window.innerWidth || 0;
     var vh = (window.visualViewport && window.visualViewport.height) || window.innerHeight || 0;
 
@@ -3236,7 +3250,7 @@ html.dx-pin-fallback .dx-wa-callout{
    We look for the tell-tale: during a downward scroll the pinned element moves up by
    almost exactly the scroll distance. Two consecutive detections switch the UI to a
    sticky navbar plus scroll-tracked absolute buttons, which no browser can break. */
-(function pinGuard() {
+(function positionGuard() {
   var root = document.documentElement;
   var header = document.getElementById('dx-header');
   var floats = ['dx-wa-btn', 'dx-totop', 'dx-themes', 'dx-wa-callout']
@@ -3244,42 +3258,83 @@ html.dx-pin-fallback .dx-wa-callout{
     .filter(Boolean);
   if (!header && !floats.length) return;
 
-  var active = false, lastY = window.pageYOffset, lastTop = null, strikes = 0, raf = null;
+  var tracking = false, fixedHeader = false, strikes = 0;
+  var rafPlace = null, rafMeasure = null;
+  var DEBUG = window.location.search.indexOf('debug') > -1;
 
   function metrics() {
     var small = (root.clientWidth || window.innerWidth || 0) <= 575;
     return { edge: small ? 20 : 18, bottom: small ? 22 : 18, stack: small ? 64 : 70, small: small, vw: root.clientWidth || window.innerWidth || 0 };
   }
 
-  function place() {
-    if (!active) return;
-    var m = metrics();
-    var vw = m.vw;
-    var vh = (window.visualViewport && window.visualViewport.height) || window.innerHeight || 0;
-    var x0 = window.pageXOffset || 0;
-    var y0 = window.pageYOffset || 0;
+  function viewportH() {
+    var vv = (window.visualViewport && window.visualViewport.height) || 0;
+    return Math.max(vv, window.innerHeight || 0);
+  }
+
+  /* position the floating buttons ourselves, glued to whatever viewport the user
+     actually sees — used only when the browser cannot pin fixed boxes properly */
+  function placeFloats() {
+    rafPlace = null;
+    if (!tracking) return;
+    var m = metrics(), vh = viewportH();
+    var x0 = window.pageXOffset || 0, y0 = window.pageYOffset || 0;
     floats.forEach(function (el) {
       if (el.hidden) return;
-      var w = el.offsetWidth, h = el.offsetHeight;
-      var gapX = 0, gapY = m.bottom;
-      if (el.id === 'dx-totop') { gapY = m.bottom + m.stack; }
+      var w = el.offsetWidth, h = el.offsetHeight, gapX = 0, gapY = m.bottom;
+      if (el.id === 'dx-totop') gapY = m.bottom + m.stack;
       if (el.id === 'dx-wa-callout') { gapX = 66; gapY = m.bottom + (m.small ? 52 : 0); }
-      var left = (el.id === 'dx-themes') ? m.edge : (vw - m.edge - gapX - w);
+      var left = (el.id === 'dx-themes') ? m.edge : (m.vw - m.edge - gapX - w);
       var top = vh - gapY - h;
       el.style.transform = 'translate3d(' + Math.round(x0 + left) + 'px,' + Math.round(y0 + top) + 'px,0)';
     });
+    placeOverlays();
   }
 
-  function schedule() {
-    if (raf) window.cancelAnimationFrame(raf);
-    raf = window.requestAnimationFrame(place);
+  function schedulePlace() {
+    if (rafPlace) return;
+    rafPlace = window.requestAnimationFrame(placeFloats);
   }
-  window.dxPlaceFloats = schedule;
+  window.dxPlaceFloats = function () { if (tracking) schedulePlace(); };
 
-  function engage() {
-    if (active) return;
-    active = true;
-    root.classList.add('dx-pin-fallback');
+  /* the mobile menu panel and its backdrop are fixed as well, so in tracked mode
+     they are placed explicitly: the panel slides in by changing this transform,
+     which the panel's own CSS transition still animates. */
+  function placeOverlays() {
+    if (!tracking) return;
+    var m = metrics(), vh = viewportH();
+    var x0 = window.pageXOffset || 0, y0 = window.pageYOffset || 0;
+    var scrim = document.getElementById('dx-scrim');
+    var panel = document.getElementById('dx-panel');
+    if (scrim) {
+      scrim.style.position = 'absolute';
+      scrim.style.left = '0';
+      scrim.style.top = '0';
+      scrim.style.right = 'auto';
+      scrim.style.bottom = 'auto';
+      scrim.style.width = m.vw + 'px';
+      scrim.style.height = vh + 'px';
+      scrim.style.transform = 'translate3d(' + Math.round(x0) + 'px,' + Math.round(y0) + 'px,0)';
+    }
+    if (panel) {
+      var pw = panel.offsetWidth;
+      var open = panel.classList.contains('is-open');
+      var left = open ? (x0 + m.vw - pw) : (x0 + m.vw + 8);
+      panel.style.position = 'absolute';
+      panel.style.left = '0';
+      panel.style.top = '0';
+      panel.style.right = 'auto';
+      panel.style.bottom = 'auto';
+      panel.style.height = vh + 'px';
+      panel.style.transform = 'translate3d(' + Math.round(left) + 'px,' + Math.round(y0) + 'px,0)';
+    }
+  }
+  window.dxSyncMenu = function () { if (tracking) placeOverlays(); };
+
+  function trackFloats() {
+    if (tracking) return;
+    tracking = true;
+    root.classList.add('dx-floats-tracked');
     floats.forEach(function (el) {
       el.style.position = 'absolute';
       el.style.left = '0';
@@ -3287,41 +3342,95 @@ html.dx-pin-fallback .dx-wa-callout{
       el.style.right = 'auto';
       el.style.bottom = 'auto';
     });
-    place();
-    window.addEventListener('scroll', schedule, { passive: true });
-    window.addEventListener('resize', schedule, { passive: true });
-    window.addEventListener('orientationchange', function () { window.setTimeout(place, 320); });
+    placeFloats();
+    window.addEventListener('scroll', schedulePlace, { passive: true });
+    window.addEventListener('resize', schedulePlace, { passive: true });
+    window.addEventListener('orientationchange', function () { window.setTimeout(placeFloats, 320); });
     if (window.visualViewport && window.visualViewport.addEventListener) {
-      window.visualViewport.addEventListener('resize', schedule);
+      window.visualViewport.addEventListener('resize', schedulePlace);
     }
-    if (String(window.location.search).indexOf('debug') > -1) {
-      console.info('[dx] this browser anchors fixed elements to the document — sticky navbar + scroll-tracked buttons enabled.');
+    if (DEBUG) console.info('[dx] fixed boxes are anchored to the document here — floating buttons are now scroll-tracked.');
+  }
+
+  /* fallback the other way: if sticky is not honoured, use a fixed navbar again */
+  function pinHeaderFixed() {
+    if (fixedHeader) return;
+    fixedHeader = true;
+    root.classList.add('dx-pin-fixed');
+    if (typeof window.dxSetHeaderVar === 'function') window.dxSetHeaderVar();
+    window.setTimeout(verifyHeader, 1500);
+    if (DEBUG) console.info('[dx] sticky navbar not honoured — switched the navbar to position:fixed.');
+  }
+
+  function verifyHeader() {
+    if (!header || !fixedHeader || window.pageYOffset < 420) return;
+    if (header.getBoundingClientRect().top < -200) {
+      /* neither strategy is honoured: sticky is the safer of the two, restore it */
+      root.classList.remove('dx-pin-fixed');
+      if (typeof window.dxSetHeaderVar === 'function') window.dxSetHeaderVar();
+      if (DEBUG) console.warn('[dx] fixed header failed too — reverted to the sticky navbar.');
     }
   }
 
-  function check() {
-    if (active || !header) return;
-    var y = window.pageYOffset;
-    var d = y - lastY;
-    if (Math.abs(d) < 80 || y < 320) {
-      if (Math.abs(d) > 10) { lastY = y; lastTop = null; }
-      return;
+  /* Absolute measurements, no scroll-delta heuristics: this fires reliably whether
+     the user scrolls slowly, fast, or never scrolls at all. */
+  function measure() {
+    rafMeasure = null;
+
+    /* 1) navbar — a pinned header keeps its top at 0; if it travelled up with the
+          page, whichever pinning strategy is active has failed */
+    if (header && !fixedHeader && window.pageYOffset > 420 && header.getBoundingClientRect().top < -160) {
+      pinHeaderFixed();
     }
-    var t = header.getBoundingClientRect().top;
-    if (lastTop === null) { lastTop = t; lastY = y; return; }
-    var moved = t - lastTop;
-    lastTop = t;
-    lastY = y;
-    /* a correctly pinned navbar keeps a constant top: if it travelled up by almost
-       the same amount the page scrolled, the browser has anchored it to the doc */
-    if (Math.abs(moved + d) < Math.abs(d) * 0.5) {
-      strikes += 1;
-      if (strikes >= 2) engage();
-    } else {
-      strikes = 0;
+    verifyHeader();
+
+    /* 2) floating buttons — the palette button is always on screen and must sit its
+          own bottom offset above the viewport bottom. If it is drawn below the
+          screen (or in the wrong place entirely), fixed boxes are document-anchored. */
+    if (!tracking) {
+      var probe = document.getElementById('dx-themes') || document.getElementById('dx-wa-btn');
+      if (probe) {
+        var r = probe.getBoundingClientRect();
+        var cs = window.getComputedStyle(probe);
+        var expected = viewportH() - (parseFloat(cs.bottom) || 20);
+        var past = r.bottom - viewportH();
+        if (past > 40 || Math.abs(r.bottom - expected) > 170) {
+          strikes += 1;
+          if (strikes >= 2) trackFloats();
+        } else {
+          strikes = 0;
+        }
+      }
     }
   }
-  window.addEventListener('scroll', function () { window.requestAnimationFrame(check); }, { passive: true });
+
+  function scheduleMeasure() {
+    if (rafMeasure) return;
+    rafMeasure = window.requestAnimationFrame(measure);
+  }
+  window.dxMeasurePins = scheduleMeasure;
+
+  window.addEventListener('scroll', scheduleMeasure, { passive: true });
+  window.addEventListener('resize', function () { scheduleMeasure(); schedulePlace(); }, { passive: true });
+  window.addEventListener('orientationchange', function () {
+    window.setTimeout(function () { scheduleMeasure(); placeFloats(); }, 320);
+  });
+  document.addEventListener('visibilitychange', function () {
+    if (!document.hidden) window.setTimeout(function () { scheduleMeasure(); placeFloats(); }, 250);
+  });
+  if (window.visualViewport && window.visualViewport.addEventListener) {
+    window.visualViewport.addEventListener('resize', schedulePlace);
+  }
+  /* several timed passes catch late layout changes (web fonts, images, URL bar) */
+  [900, 2500, 6000, 12000, 25000].forEach(function (t) {
+    window.setTimeout(function () { measure(); placeFloats(); }, t);
+  });
+  window.addEventListener('load', function () { measure(); placeFloats(); });
+
+  /* ?pin forces the tracked mode — useful for verifying a fix on a real device */
+  if (window.location.search.indexOf('pin') > -1 && window.location.search.indexOf('nopin') === -1) {
+    window.setTimeout(trackFloats, 800);
+  }
 })();
 
 /* ---------- optional overflow audit ----------
@@ -3372,6 +3481,7 @@ html.dx-pin-fallback .dx-wa-callout{
     window.requestAnimationFrame(function () { bubble.classList.add('is-show'); });
     if (typeof window.dxClampFloats === 'function') window.setTimeout(window.dxClampFloats, 40);
     if (typeof window.dxPlaceFloats === 'function') window.setTimeout(window.dxPlaceFloats, 40);
+    if (typeof window.dxMeasurePins === 'function') window.setTimeout(window.dxMeasurePins, 60);
     btn.classList.add('is-attention');
     window.setTimeout(function () { btn.classList.remove('is-attention'); }, 2600);
     shown = shown + 1;
