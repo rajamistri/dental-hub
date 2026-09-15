@@ -1238,6 +1238,74 @@ textarea.dx-input{min-height:118px;resize:vertical}
 @media (prefers-reduced-motion:reduce){
   .dx-ba-card,.dx-ba__tab{transition:none!important}
 }
+
+/* ---------- 14. SAFE-AREA & EDGE-DISPLAY FIXES ----------
+   Phones with curved screens and gesture navigation (Vivo, Oppo, Samsung,
+   Pixel…) render the page edge-to-edge because of viewport-fit=cover, so
+   content at the very top, right and bottom edges sits under the status bar,
+   the rounded corners or the gesture pill. These insets keep the fixed header,
+   the mobile menu and every floating button inside the visible frame. */
+.dx-container{
+  padding-left:calc(var(--gutter) + env(safe-area-inset-left,0px));
+  padding-right:calc(var(--gutter) + env(safe-area-inset-right,0px));
+}
+/* dark strip painted only behind the status bar (clock/battery/camera area) so the
+   translucent glass navbar below it is unaffected */
+.dx-header{padding-top:env(safe-area-inset-top,0px)}
+.dx-header::before{
+  content:"";position:absolute;left:0;right:0;top:0;
+  height:env(safe-area-inset-top,0px);background:var(--ink);pointer-events:none
+}
+/* mobile panel: keep the close button below the status bar and inside the curve */
+.dx-panel{padding-right:env(safe-area-inset-right,0px)}
+.dx-panel__head{padding-top:calc(18px + env(safe-area-inset-top,0px))}
+.dx-panel__foot{padding-bottom:calc(28px + env(safe-area-inset-bottom,0px))}
+/* floating controls */
+.dx-wa{
+  right:calc(clamp(14px,2.4vw,28px) + env(safe-area-inset-right,0px));
+  bottom:calc(clamp(14px,2.4vw,28px) + env(safe-area-inset-bottom,0px))
+}
+.dx-totop{
+  right:calc(clamp(14px,2.4vw,28px) + env(safe-area-inset-right,0px));
+  bottom:calc(clamp(14px,2.4vw,28px) + 70px + env(safe-area-inset-bottom,0px))
+}
+.dx-themes{
+  left:calc(clamp(14px,2.4vw,28px) + env(safe-area-inset-left,0px));
+  bottom:calc(clamp(14px,2.4vw,28px) + env(safe-area-inset-bottom,0px))
+}
+.dx-wa-callout{
+  right:calc(clamp(14px,2.4vw,28px) + 66px + env(safe-area-inset-right,0px));
+  bottom:calc(clamp(14px,2.4vw,28px) + env(safe-area-inset-bottom,0px))
+}
+.dx-disclaimer{padding-bottom:calc(22px + env(safe-area-inset-bottom,0px))}
+.dx-skip{left:calc(16px + env(safe-area-inset-left,0px))}
+
+/* navbar footprint: the brand can shrink, the hamburger can never be pushed out */
+@media (max-width:991.98px){
+  .dx-nav__in>.dx-logo{flex:1 1 auto;min-width:0}
+  .dx-nav__actions{flex:0 0 auto}
+  .dx-logo__txt{min-width:0;max-width:100%}
+  .dx-logo__name,.dx-logo__sub{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%}
+}
+@media (max-width:575.98px){
+  .dx-nav__in{gap:10px}
+  .dx-logo{gap:9px}
+  .dx-logo__name{font-size:1.06rem}
+  .dx-logo__sub{font-size:.54rem;letter-spacing:.14em}
+  .dx-logo__mark{width:38px;height:38px;flex:0 0 38px;border-radius:12px}
+  .dx-logo__mark svg{width:20px;height:20px}
+  .dx-burger{width:44px;height:44px;flex:0 0 44px;border-radius:13px}
+  /* floating controls on small screens */
+  .dx-wa{right:calc(14px + env(safe-area-inset-right,0px));bottom:calc(14px + env(safe-area-inset-bottom,0px))}
+  .dx-totop{right:calc(14px + env(safe-area-inset-right,0px));bottom:calc(78px + env(safe-area-inset-bottom,0px))}
+  .dx-themes{left:calc(14px + env(safe-area-inset-left,0px));bottom:calc(14px + env(safe-area-inset-bottom,0px))}
+  .dx-wa-callout{
+    right:calc(14px + 62px + env(safe-area-inset-right,0px));
+    bottom:calc(74px + env(safe-area-inset-bottom,0px));
+    width:min(206px,calc(100vw - 90px - env(safe-area-inset-right,0px) - env(safe-area-inset-left,0px)))
+  }
+  .dx-themes__menu{max-width:calc(100vw - 34px - env(safe-area-inset-left,0px) - env(safe-area-inset-right,0px))}
+}
 </style>
 </head>
 <body>
