@@ -8,6 +8,20 @@
 /* Apply the saved colour palette before first paint to avoid any flash. */
 (function(){try{var t=localStorage.getItem('dx-theme');if(t&&t!=='plum'){document.documentElement.setAttribute('data-theme',t);}}catch(e){}})();
 </script>
+<!--
+  GITHUB PAGES DEPLOYMENT NOTES
+  • Commit this file as /index.html in the repo root (or /docs/index.html) and point
+    Settings → Pages at that branch/folder. Never open it through github.com's file viewer.
+  • Add an EMPTY file named ".nojekyll" to the repo root: it stops GitHub Pages from
+    running Jekyll over the HTML (Jekyll can swallow or mangle parts of a hand-written
+    page, which shows up as broken/loose layout on the live site but not in previews).
+  • GitHub Pages caches through its CDN for several minutes. After every push, hard-refresh
+    the phone (or open the site with ?v=2 appended) so you are not looking at a stale build.
+  • Reference previews such as arena.site render the page inside an iframe, where the
+    viewport meta is ignored — mobile problems that appear only on the live host are
+    almost always edge-to-edge / safe-area related. Below, all fixed controls keep a
+    guaranteed minimum gap from the screen edge instead of trusting env() to be non-zero.
+-->
 <title>Aira Multispeciality Dental Clinic — Trusted Dental Care in Bardhaman, West Bengal</title>
 <meta name="description" content="Aira Multispeciality Dental Clinic, Bardhaman (Burdwan), West Bengal — dental implants, braces, root canal treatment, teeth whitening and complete family dental care with modern digital technology, painless treatment and easy EMI options.">
 
@@ -1260,23 +1274,23 @@ textarea.dx-input{min-height:118px;resize:vertical}
 .dx-panel{padding-right:env(safe-area-inset-right,0px)}
 .dx-panel__head{padding-top:calc(18px + env(safe-area-inset-top,0px))}
 .dx-panel__foot{padding-bottom:calc(28px + env(safe-area-inset-bottom,0px))}
+/* Edge tokens — a GUARANTEED minimum gap from the physical screen edge.
+   Android Chrome reports 0px for env(safe-area-inset-*) on many phones even when
+   the page is drawn edge-to-edge (curved glass, punch-hole camera, gesture bar),
+   so a plain `env()` offset can silently become 0 and push fixed controls under
+   the system UI. max() keeps a real margin at all times and grows it when the
+   device does report insets. */
+:root{
+  --edge-r:max(18px,env(safe-area-inset-right,0px));
+  --edge-l:max(18px,env(safe-area-inset-left,0px));
+  --edge-b:max(18px,env(safe-area-inset-bottom,0px));
+  --edge-stack:70px
+}
 /* floating controls */
-.dx-wa{
-  right:calc(clamp(14px,2.4vw,28px) + env(safe-area-inset-right,0px));
-  bottom:calc(clamp(14px,2.4vw,28px) + env(safe-area-inset-bottom,0px))
-}
-.dx-totop{
-  right:calc(clamp(14px,2.4vw,28px) + env(safe-area-inset-right,0px));
-  bottom:calc(clamp(14px,2.4vw,28px) + 70px + env(safe-area-inset-bottom,0px))
-}
-.dx-themes{
-  left:calc(clamp(14px,2.4vw,28px) + env(safe-area-inset-left,0px));
-  bottom:calc(clamp(14px,2.4vw,28px) + env(safe-area-inset-bottom,0px))
-}
-.dx-wa-callout{
-  right:calc(clamp(14px,2.4vw,28px) + 66px + env(safe-area-inset-right,0px));
-  bottom:calc(clamp(14px,2.4vw,28px) + env(safe-area-inset-bottom,0px))
-}
+.dx-wa{right:var(--edge-r);bottom:var(--edge-b)}
+.dx-totop{right:var(--edge-r);bottom:calc(var(--edge-b) + var(--edge-stack))}
+.dx-themes{left:var(--edge-l);bottom:var(--edge-b)}
+.dx-wa-callout{right:calc(var(--edge-r) + 66px);bottom:var(--edge-b)}
 .dx-disclaimer{padding-bottom:calc(22px + env(safe-area-inset-bottom,0px))}
 .dx-skip{left:calc(16px + env(safe-area-inset-left,0px))}
 
@@ -1295,15 +1309,17 @@ textarea.dx-input{min-height:118px;resize:vertical}
   .dx-logo__mark{width:38px;height:38px;flex:0 0 38px;border-radius:12px}
   .dx-logo__mark svg{width:20px;height:20px}
   .dx-burger{width:44px;height:44px;flex:0 0 44px;border-radius:13px}
-  /* floating controls on small screens */
-  .dx-wa{right:calc(14px + env(safe-area-inset-right,0px));bottom:calc(14px + env(safe-area-inset-bottom,0px))}
-  .dx-totop{right:calc(14px + env(safe-area-inset-right,0px));bottom:calc(78px + env(safe-area-inset-bottom,0px))}
-  .dx-themes{left:calc(14px + env(safe-area-inset-left,0px));bottom:calc(14px + env(safe-area-inset-bottom,0px))}
-  .dx-wa-callout{
-    right:calc(14px + 62px + env(safe-area-inset-right,0px));
-    bottom:calc(74px + env(safe-area-inset-bottom,0px));
-    width:min(206px,calc(100vw - 90px - env(safe-area-inset-right,0px) - env(safe-area-inset-left,0px)))
+  /* phones: bigger guaranteed clearance from the curved glass + gesture bar, and a
+     small cushion above the navbar so the hamburger never sits under the status bar */
+  :root{--edge-r:max(20px,env(safe-area-inset-right,0px));--edge-l:max(20px,env(safe-area-inset-left,0px));--edge-b:max(22px,env(safe-area-inset-bottom,0px));--edge-stack:64px}
+  .dx-container{
+    padding-left:calc(20px + env(safe-area-inset-left,0px));
+    padding-right:calc(20px + env(safe-area-inset-right,0px))
   }
+  .dx-header{padding-top:calc(env(safe-area-inset-top,0px) + 3px)}
+  .dx-header::before{height:calc(env(safe-area-inset-top,0px) + 3px)}
+  .dx-panel__head{padding-top:calc(20px + env(safe-area-inset-top,0px))}
+  .dx-wa-callout{width:min(206px,calc(100vw - 92px - env(safe-area-inset-right,0px) - env(safe-area-inset-left,0px)))}
   .dx-themes__menu{max-width:calc(100vw - 34px - env(safe-area-inset-left,0px) - env(safe-area-inset-right,0px))}
 }
 </style>
@@ -3094,6 +3110,65 @@ textarea.dx-input{min-height:118px;resize:vertical}
   document.addEventListener('keydown', function (e) { if (e.key === 'Escape') close(); });
 })();
 
+/* ---------- floating control safety clamp ----------
+   Belt-and-braces for edge-to-edge Android browsers: after every layout change,
+   measure the fixed controls against the real client box and nudge any that would
+   be drawn outside it (zoom, desktop-mode scaling, scrollbar-less overflow, a host
+   that reports nothing for env(safe-area-inset-*)). Inline styles are cleared first
+   so the CSS edge tokens stay in charge whenever nothing is wrong. */
+(function floatGuard() {
+  var els = ['dx-wa-btn', 'dx-totop', 'dx-themes', 'dx-wa-callout']
+    .map(function (id) { return document.getElementById(id); })
+    .filter(Boolean);
+  if (!els.length) return;
+
+  var raf = null;
+  var GUARD = 8;
+
+  function clamp() {
+    var vw = document.documentElement.clientWidth || window.innerWidth || 0;
+    var vh = (window.visualViewport && window.visualViewport.height) || window.innerHeight || 0;
+
+    els.forEach(function (el) {
+      if (el.hidden) return;
+      el.style.removeProperty('right');
+      el.style.removeProperty('left');
+      el.style.removeProperty('bottom');
+
+      var rect = el.getBoundingClientRect();
+      var cs = window.getComputedStyle(el);
+
+      if (rect.right > vw - 2) {
+        var right = parseFloat(cs.right) || 0;
+        el.style.right = Math.round(right + (rect.right - (vw - 2)) + GUARD) + 'px';
+      }
+      if (rect.left < 2) {
+        var left = parseFloat(cs.left) || 0;
+        el.style.left = Math.round(left + (2 - rect.left) + GUARD) + 'px';
+      }
+      if (rect.bottom > vh - 2) {
+        var bottom = parseFloat(cs.bottom) || 0;
+        el.style.bottom = Math.round(bottom + (rect.bottom - (vh - 2)) + GUARD) + 'px';
+      }
+    });
+  }
+
+  function run() {
+    if (raf) window.cancelAnimationFrame(raf);
+    raf = window.requestAnimationFrame(clamp);
+  }
+  window.dxClampFloats = run;
+
+  window.addEventListener('load', run);
+  window.addEventListener('resize', run, { passive: true });
+  window.addEventListener('orientationchange', function () { window.setTimeout(run, 320); });
+  if (window.visualViewport && window.visualViewport.addEventListener) {
+    window.visualViewport.addEventListener('resize', run);
+    window.visualViewport.addEventListener('scroll', run);
+  }
+  window.setTimeout(run, 1500);
+})();
+
 /* ---------- WhatsApp callout message: recalls visitors to book an appointment ---------- */
 (function waCallout() {
   var bubble = document.getElementById('dx-wa-callout');
@@ -3119,6 +3194,7 @@ textarea.dx-input{min-height:118px;resize:vertical}
     index = index + 1;
     bubble.hidden = false;
     window.requestAnimationFrame(function () { bubble.classList.add('is-show'); });
+    if (typeof window.dxClampFloats === 'function') window.setTimeout(window.dxClampFloats, 40);
     btn.classList.add('is-attention');
     window.setTimeout(function () { btn.classList.remove('is-attention'); }, 2600);
     shown = shown + 1;
