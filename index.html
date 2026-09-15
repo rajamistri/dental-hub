@@ -17,10 +17,18 @@
     page, which shows up as broken/loose layout on the live site but not in previews).
   • GitHub Pages caches through its CDN for several minutes. After every push, hard-refresh
     the phone (or open the site with ?v=2 appended) so you are not looking at a stale build.
-  • Reference previews such as arena.site render the page inside an iframe, where the
-    viewport meta is ignored — mobile problems that appear only on the live host are
-    almost always edge-to-edge / safe-area related. Below, all fixed controls keep a
-    guaranteed minimum gap from the screen edge instead of trusting env() to be non-zero.
+  • Reference previews such as arena.site render the page inside an iframe, so the
+    inner document is clipped by the parent: horizontal overflow and "fixed" drift
+    simply cannot show up there. On a top-level host they can, which is why the same
+    file can look different on GitHub Pages. Two defences are built in:
+      1. the layout cannot overflow horizontally (vertical-only reveals, panel parked
+         at 100%, breakable long strings) and every fixed control keeps a guaranteed
+         minimum gap from the screen edge instead of trusting env() to be non-zero;
+      2. a runtime PIN GUARD watches the navbar while you scroll — if a browser
+         anchors fixed boxes to the document instead of the screen, the navbar is
+         switched to position:sticky and the floating buttons are positioned by
+         scroll-tracked transforms, so the UI stays on screen on any device.
+    Open the site with ?debug appended to see any overflow culprit in the console.
 -->
 <title>Aira Multispeciality Dental Clinic — Trusted Dental Care in Bardhaman, West Bengal</title>
 <meta name="description" content="Aira Multispeciality Dental Clinic, Bardhaman (Burdwan), West Bengal — dental implants, braces, root canal treatment, teeth whitening and complete family dental care with modern digital technology, painless treatment and easy EMI options.">
@@ -135,7 +143,6 @@ body{
   line-height:1.72;
   color:var(--text);
   background:var(--mist);
-  overflow-x:clip;
   -webkit-font-smoothing:antialiased;
   overflow-wrap:break-word;
 }
@@ -313,7 +320,7 @@ button{font-family:inherit}
   display:flex;flex-direction:column;
   background:linear-gradient(180deg,#0B2E4A 0%,#071B2E 100%);
   box-shadow:-24px 0 60px -24px rgba(6,24,41,.6);
-  transform:translateX(104%);
+  transform:translateX(100%);
   visibility:hidden;
   transition:transform .5s var(--ease-out),visibility .5s var(--ease-out);
   overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch
@@ -919,9 +926,12 @@ textarea.dx-input{min-height:118px;resize:vertical}
 /* ---------- 10. ANIMATIONS ---------- */
 .dx-reveal{opacity:0;transform:translate3d(0,28px,0);transition:opacity .8s var(--ease) var(--d,0ms),transform .9s var(--ease) var(--d,0ms)}
 .dx-reveal.is-in{will-change:auto}
-.dx-reveal--left{transform:translate3d(-34px,0,0)}
-.dx-reveal--right{transform:translate3d(34px,0,0)}
-.dx-reveal--zoom{transform:scale(.94)}
+/* reveal states move vertically only: a horizontal translate on a column that sits
+   flush with the container gutter can poke past the viewport while it waits to
+   animate in, which is what made some phones scroll sideways */
+.dx-reveal--left{transform:translate3d(0,26px,0) scale(.985)}
+.dx-reveal--right{transform:translate3d(0,26px,0) scale(.985)}
+.dx-reveal--zoom{transform:scale(.95)}
 .dx-reveal.is-in{opacity:1;transform:none}
 .dx-stagger>*{opacity:0;transform:translate3d(0,30px,0);transition:opacity .75s var(--ease),transform .85s var(--ease)}
 .dx-stagger.is-in>*{opacity:1;transform:none}
@@ -1251,6 +1261,53 @@ textarea.dx-input{min-height:118px;resize:vertical}
 }
 @media (prefers-reduced-motion:reduce){
   .dx-ba-card,.dx-ba__tab{transition:none!important}
+}
+
+/* ---------- 15. HORIZONTAL OVERFLOW ELIMINATION ----------
+   A horizontally scrollable page is what breaks fixed UI on real phones: the
+   navbar (and its hamburger), WhatsApp and back-to-top boxes end up anchored to a
+   viewport that is wider than the screen, so they drift out of the frame as you
+   scroll. The causes are removed rather than hidden:
+   (1) scroll-reveal states move vertically only — no translateX anywhere, so no
+       element reaches past the container gutter while waiting to animate in,
+   (2) the off-canvas mobile panel is parked at exactly 100% (not 104%),
+   (3) long unbreakable strings such as e-mail addresses may break inside flex and
+       grid rows.
+   Deliberately NO overflow clipping on html / body / main: clipping the root is
+   handled inconsistently by mobile browsers and can itself disturb
+   position:fixed and position:sticky. The layout above already cannot overflow. */
+/* long words / e-mail addresses inside flex or grid rows must be allowed to shrink */
+.dx-info__item>span,
+.dx-info__item>span>a,
+.dx-info__item p,
+.dx-footer__list a,
+.dx-footer__list span,
+.dx-faq__list li,
+.dx-faq__list li>a,
+.dx-cta__row>span,
+.dx-cta__row span span,
+.dx-hours li span,
+.dx-ba__foot span,
+.dx-footer__about{min-width:0;overflow-wrap:anywhere}
+/* never let a decorative/fixed layer widen the document */
+.dx-bg,.dx-scrim,.dx-panel,.dx-header,.dx-wa,.dx-totop,.dx-themes,.dx-wa-callout{max-width:100vw}
+
+/* ---------- 15b. PIN FALLBACK ----------
+   Some Android builds anchor position:fixed boxes to the document rather than the
+   screen when a page can scroll sideways, so the navbar scrolls away and the
+   floating buttons sink to the document bottom. If the runtime guard detects that
+   pattern it adds .dx-pin-fallback here: the navbar becomes sticky (in-flow, so a
+   browser cannot lose it) and the floating buttons are positioned by scroll-
+   tracked transforms instead of bottom/right. */
+html.dx-pin-fallback .dx-header{position:sticky;top:0}
+html.dx-pin-fallback body{padding-top:0!important}
+html.dx-pin-fallback .dx-header::before{position:absolute}
+html.dx-pin-fallback .dx-wa,
+html.dx-pin-fallback .dx-totop,
+html.dx-pin-fallback .dx-themes,
+html.dx-pin-fallback .dx-wa-callout{
+  transition:opacity .35s var(--ease),visibility .35s var(--ease),box-shadow .4s var(--ease)!important;
+  will-change:transform
 }
 
 /* ---------- 14. SAFE-AREA & EDGE-DISPLAY FIXES ----------
@@ -3126,6 +3183,8 @@ textarea.dx-input{min-height:118px;resize:vertical}
   var GUARD = 8;
 
   function clamp() {
+    /* the pin fallback positions the controls itself — leave it alone */
+    if (document.documentElement.classList.contains('dx-pin-fallback')) return;
     var vw = document.documentElement.clientWidth || window.innerWidth || 0;
     var vh = (window.visualViewport && window.visualViewport.height) || window.innerHeight || 0;
 
@@ -3169,6 +3228,123 @@ textarea.dx-input{min-height:118px;resize:vertical}
   window.setTimeout(run, 1500);
 })();
 
+/* ---------- broken position:fixed detection & self-heal ----------
+   On a real top-level page some Android browsers anchor fixed boxes to the document
+   instead of the screen (more likely once the page can scroll sideways). Symptom:
+   the navbar scrolls away with the content and the floating buttons hang around the
+   document bottom — exactly what an iframe preview such as a reference link hides.
+   We look for the tell-tale: during a downward scroll the pinned element moves up by
+   almost exactly the scroll distance. Two consecutive detections switch the UI to a
+   sticky navbar plus scroll-tracked absolute buttons, which no browser can break. */
+(function pinGuard() {
+  var root = document.documentElement;
+  var header = document.getElementById('dx-header');
+  var floats = ['dx-wa-btn', 'dx-totop', 'dx-themes', 'dx-wa-callout']
+    .map(function (id) { return document.getElementById(id); })
+    .filter(Boolean);
+  if (!header && !floats.length) return;
+
+  var active = false, lastY = window.pageYOffset, lastTop = null, strikes = 0, raf = null;
+
+  function metrics() {
+    var small = (root.clientWidth || window.innerWidth || 0) <= 575;
+    return { edge: small ? 20 : 18, bottom: small ? 22 : 18, stack: small ? 64 : 70, small: small, vw: root.clientWidth || window.innerWidth || 0 };
+  }
+
+  function place() {
+    if (!active) return;
+    var m = metrics();
+    var vw = m.vw;
+    var vh = (window.visualViewport && window.visualViewport.height) || window.innerHeight || 0;
+    var x0 = window.pageXOffset || 0;
+    var y0 = window.pageYOffset || 0;
+    floats.forEach(function (el) {
+      if (el.hidden) return;
+      var w = el.offsetWidth, h = el.offsetHeight;
+      var gapX = 0, gapY = m.bottom;
+      if (el.id === 'dx-totop') { gapY = m.bottom + m.stack; }
+      if (el.id === 'dx-wa-callout') { gapX = 66; gapY = m.bottom + (m.small ? 52 : 0); }
+      var left = (el.id === 'dx-themes') ? m.edge : (vw - m.edge - gapX - w);
+      var top = vh - gapY - h;
+      el.style.transform = 'translate3d(' + Math.round(x0 + left) + 'px,' + Math.round(y0 + top) + 'px,0)';
+    });
+  }
+
+  function schedule() {
+    if (raf) window.cancelAnimationFrame(raf);
+    raf = window.requestAnimationFrame(place);
+  }
+  window.dxPlaceFloats = schedule;
+
+  function engage() {
+    if (active) return;
+    active = true;
+    root.classList.add('dx-pin-fallback');
+    floats.forEach(function (el) {
+      el.style.position = 'absolute';
+      el.style.left = '0';
+      el.style.top = '0';
+      el.style.right = 'auto';
+      el.style.bottom = 'auto';
+    });
+    place();
+    window.addEventListener('scroll', schedule, { passive: true });
+    window.addEventListener('resize', schedule, { passive: true });
+    window.addEventListener('orientationchange', function () { window.setTimeout(place, 320); });
+    if (window.visualViewport && window.visualViewport.addEventListener) {
+      window.visualViewport.addEventListener('resize', schedule);
+    }
+    if (String(window.location.search).indexOf('debug') > -1) {
+      console.info('[dx] this browser anchors fixed elements to the document — sticky navbar + scroll-tracked buttons enabled.');
+    }
+  }
+
+  function check() {
+    if (active || !header) return;
+    var y = window.pageYOffset;
+    var d = y - lastY;
+    if (Math.abs(d) < 80 || y < 320) {
+      if (Math.abs(d) > 10) { lastY = y; lastTop = null; }
+      return;
+    }
+    var t = header.getBoundingClientRect().top;
+    if (lastTop === null) { lastTop = t; lastY = y; return; }
+    var moved = t - lastTop;
+    lastTop = t;
+    lastY = y;
+    /* a correctly pinned navbar keeps a constant top: if it travelled up by almost
+       the same amount the page scrolled, the browser has anchored it to the doc */
+    if (Math.abs(moved + d) < Math.abs(d) * 0.5) {
+      strikes += 1;
+      if (strikes >= 2) engage();
+    } else {
+      strikes = 0;
+    }
+  }
+  window.addEventListener('scroll', function () { window.requestAnimationFrame(check); }, { passive: true });
+})();
+
+/* ---------- optional overflow audit ----------
+   Open the site with ?debug appended to the URL to list any element that still
+   reaches past the viewport edge. Silent otherwise, so it never affects the UI. */
+(function overflowAudit() {
+  if (String(window.location.search).indexOf('debug') === -1) return;
+  var vw = document.documentElement.clientWidth;
+  var doc = document.documentElement;
+  var out = ['[dx] viewport ' + vw + 'px | document scrollWidth ' + doc.scrollWidth + 'px'];
+  var suspects = [];
+  Array.prototype.forEach.call(document.body.querySelectorAll('*'), function (el) {
+    if (el.closest('.dx-bg') || el.closest('.dx-panel') || el.closest('.dx-wa-callout')) return;
+    var r = el.getBoundingClientRect();
+    if (r.width === 0 || r.height === 0) return;
+    if (r.right > vw + 1 || r.left < -1) {
+      suspects.push(el.tagName.toLowerCase() + (el.id ? '#' + el.id : '.' + String(el.className).split(' ')[0]) + ' → ' + Math.round(r.left) + '…' + Math.round(r.right));
+    }
+  });
+  if (suspects.length) console.warn(out[0] + '\nhorizontal overflow suspects:\n' + suspects.slice(0, 30).join('\n'));
+  else console.info(out[0] + '\nno horizontal overflow ✓');
+})();
+
 /* ---------- WhatsApp callout message: recalls visitors to book an appointment ---------- */
 (function waCallout() {
   var bubble = document.getElementById('dx-wa-callout');
@@ -3195,6 +3371,7 @@ textarea.dx-input{min-height:118px;resize:vertical}
     bubble.hidden = false;
     window.requestAnimationFrame(function () { bubble.classList.add('is-show'); });
     if (typeof window.dxClampFloats === 'function') window.setTimeout(window.dxClampFloats, 40);
+    if (typeof window.dxPlaceFloats === 'function') window.setTimeout(window.dxPlaceFloats, 40);
     btn.classList.add('is-attention');
     window.setTimeout(function () { btn.classList.remove('is-attention'); }, 2600);
     shown = shown + 1;
