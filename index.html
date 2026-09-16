@@ -33,6 +33,11 @@
 /* ---------- 1. TOKENS ---------- */
 /* Palette = Plum & Rose (default). Alternate palettes below swap the same
    tokens, so every surface, tint and shadow follows automatically. */
+   html,
+body{
+    max-width:100%;
+    overflow-x:clip;
+}
 :root{
   --ink:#1B0F23;
   --ink-rgb:27 15 35;
@@ -344,7 +349,12 @@ button{font-family:inherit}
 .dx-panel__social a:hover{background:var(--teal);color:#fff}
 
 /* ---------- 5. HERO ---------- */
-.dx-hero{position:relative;padding-block:clamp(38px,5.4vw,86px) clamp(56px,6.6vw,104px)}
+/* .dx-hero{position:relative;padding-block:clamp(38px,5.4vw,86px) clamp(56px,6.6vw,104px)}
+   .dx-hero{
+    position:relative;
+    overflow-x:clip;
+    padding-block:clamp(38px,5.4vw,86px) clamp(56px,6.6vw,104px);
+}*/
 .dx-hero::before{
   content:"";position:absolute;inset:0;z-index:-1;
   background:radial-gradient(90% 70% at 88% 8%,rgba(15,178,163,.10),transparent 62%),
