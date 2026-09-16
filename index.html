@@ -8,34 +8,6 @@
 /* Apply the saved colour palette before first paint to avoid any flash. */
 (function(){try{var t=localStorage.getItem('dx-theme');if(t&&t!=='plum'){document.documentElement.setAttribute('data-theme',t);}}catch(e){}})();
 </script>
-<!--
-  GITHUB PAGES DEPLOYMENT NOTES
-  • Commit this file as /index.html in the repo root (or /docs/index.html) and point
-    Settings → Pages at that branch/folder. Never open it through github.com's file viewer.
-  • Add an EMPTY file named ".nojekyll" to the repo root: it stops GitHub Pages from
-    running Jekyll over the HTML (Jekyll can swallow or mangle parts of a hand-written
-    page, which shows up as broken/loose layout on the live site but not in previews).
-  • GitHub Pages caches through its CDN for several minutes. After every push, hard-refresh
-    the phone (or open the site with ?v=2 appended) so you are not looking at a stale build.
-  • Reference previews such as arena.site render the page inside an iframe, so the
-    inner document is clipped by the parent: horizontal overflow and "fixed" drift
-    simply cannot show up there. On a top-level host they can, which is why the same
-    file can look different on GitHub Pages. Two defences are built in:
-      1. the layout cannot overflow horizontally (vertical-only reveals, panel parked
-         at 100%, breakable long strings) and every fixed control keeps a guaranteed
-         minimum gap from the screen edge instead of trusting env() to be non-zero;
-      2. the navbar is STICKY, not fixed — sticky elements live in the document flow,
-         so a browser that mis-anchors position:fixed cannot detach the navbar. If a
-         browser cannot do sticky either, the runtime adds .dx-pin-fixed and restores
-         a fixed navbar with the body offset;
-      3. a runtime POSITION GUARD measures the floating buttons (and the mobile menu
-         panel and its backdrop) with absolute tests — no scroll-delta guessing. If
-         they are drawn below the screen or at the document bottom, it adds
-         .dx-floats-tracked and positions them itself with scroll-tracked transforms.
-         It re-checks on load, scroll, resize, rotation, tab focus and on a timer.
-    Open the site with ?debug appended to see what the guard decided, and with ?pin
-    to force the tracked mode while testing on a device.
--->
 <title>Aira Multispeciality Dental Clinic — Trusted Dental Care in Bardhaman, West Bengal</title>
 <meta name="description" content="Aira Multispeciality Dental Clinic, Bardhaman (Burdwan), West Bengal — dental implants, braces, root canal treatment, teeth whitening and complete family dental care with modern digital technology, painless treatment and easy EMI options.">
 
@@ -140,12 +112,9 @@
 
 /* ---------- 2. BASE ---------- */
 *,*::before,*::after{box-sizing:border-box}
-html{-webkit-text-size-adjust:100%;scroll-behavior:smooth;scroll-padding-top:calc(var(--hdr-h) + 16px)}
+html{-webkit-text-size-adjust:100%;scroll-behavior:smooth;scroll-padding-top:calc(var(--hdr-h) + 16px);scrollbar-gutter:stable}
 body{
   margin:0;
-  /* the navbar is sticky (see sections 4 and 15b): it already occupies its own
-     space in the flow, so no padding offset is needed here. The fixed-header
-     fallback adds the offset back when required. */
   padding-top:0;
   font-family:var(--font-ui);
   font-size:clamp(15px,.55vw + 13.6px,16.5px);
@@ -254,13 +223,10 @@ button{font-family:inherit}
 .dx-bg__smile{position:absolute;left:50%;transform:translateX(-50%);top:34vh;width:min(90vw,1150px);opacity:.34}
 
 /* ---------- 4. HEADER ---------- */
-/* Sticky rather than fixed: some Android browsers anchor position:fixed boxes to
-   the document once a page can scroll sideways, which makes the navbar scroll
-   away. A sticky element lives in the flow, so it can never be detached. */
-.dx-header{position:sticky;top:0;left:0;right:0;z-index:1030}
+.dx-header{position:fixed;top:0;left:0;right:0;width:100%;z-index:1030}
 .dx-topbar{
   background:var(--ink);color:rgba(232,244,251,.76);font-size:.79rem;
-  height:38px;overflow:hidden;transition:height .45s var(--ease),opacity .3s var(--ease);
+  height:38px;overflow:hidden;transition:opacity .3s ease;
 }
 .dx-topbar__in{display:flex;align-items:center;justify-content:space-between;gap:18px;height:38px}
 .dx-topbar__list{display:flex;align-items:center;gap:22px;flex-wrap:nowrap;min-width:0}
@@ -269,16 +235,26 @@ button{font-family:inherit}
 .dx-topbar__right{display:flex;align-items:center;gap:16px;white-space:nowrap}
 .dx-topbar__right a{color:inherit}
 .dx-topbar__right a:hover{color:#fff}
-.dx-header.is-scrolled .dx-topbar{height:0;opacity:0}
+.dx-header.is-scrolled .dx-topbar{
+    height:38px;
+    opacity:1;
+}
 
 .dx-nav{
   position:relative;background:rgba(255,255,255,.86);backdrop-filter:blur(14px) saturate(140%);
   border-bottom:1px solid var(--line);
   transition:background-color .4s var(--ease),box-shadow .4s var(--ease),border-color .4s var(--ease);
 }
-.dx-nav__in{display:flex;align-items:center;justify-content:space-between;gap:20px;height:74px;transition:height .4s var(--ease)}
+.dx-nav__in{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:20px;
+    height:74px;
+    transition:none;
+}
 .dx-header.is-scrolled .dx-nav{background:rgba(255,255,255,.95);box-shadow:0 12px 30px -22px rgba(8,32,54,.45)}
-.dx-header.is-scrolled .dx-nav__in{height:66px}
+.dx-header.is-scrolled .dx-nav__in{height:74px}
 
 .dx-logo{display:inline-flex;align-items:center;gap:12px;min-width:0}
 .dx-logo__mark{
@@ -880,70 +856,105 @@ textarea.dx-input{min-height:118px;resize:vertical}
 
 /* ---------- 9. FLOATS ---------- */
 .dx-wa{
-  position:fixed;right:clamp(14px,2.4vw,28px);bottom:clamp(14px,2.4vw,28px);z-index:1040;
-  width:58px;height:58px;border-radius:50%;display:grid;place-items:center;
-  background:linear-gradient(150deg,#37D07A,#1FA855);color:#fff;font-size:1.6rem;
-  box-shadow:0 16px 34px -12px rgba(31,168,85,.75);
-  transition:transform .45s var(--ease),box-shadow .45s var(--ease)
-}
-.dx-wa:hover{color:#fff;transform:translateY(-4px) scale(1.06);box-shadow:0 22px 42px -12px rgba(31,168,85,.85)}
-.dx-wa::before{content:"";position:absolute;inset:0;border-radius:50%;border:2px solid rgba(55,208,122,.55);animation:dxPing 2.6s var(--ease) infinite}
-@keyframes dxWaLive{0%,100%{transform:translateY(0) rotate(0)}22%{transform:translateY(-7px) rotate(-5deg)}48%{transform:translateY(0) rotate(4deg)}72%{transform:translateY(-3px) rotate(-2deg)}}
-.dx-wa.is-attention{animation:dxWaLive 1.2s var(--ease) 2}
+    position:fixed;
+    right:20px;
+    bottom:20px;
+    width:54px;
+    height:54px;
+    z-index:1040;
 
-/* WhatsApp callout message — reminds visitors to book an appointment */
-.dx-wa-callout{
-  position:fixed;z-index:1039;
-  right:calc(clamp(14px,2.4vw,28px) + 66px);
-  bottom:clamp(14px,2.4vw,28px);
-  width:min(232px,calc(100vw - 100px));
-  padding:11px 13px 11px;border-radius:15px;
-  background:#fff;border:1px solid var(--line);box-shadow:var(--sh-2);
-  opacity:0;visibility:hidden;
-  transform:translate3d(14px,8px,0) scale(.92);transform-origin:100% 100%;
-  transition:opacity .4s var(--ease),transform .5s var(--ease-out),visibility .4s var(--ease)
+    display:grid;
+    place-items:center;
+
+    border-radius:50%;
+    background:linear-gradient(150deg,#37D07A,#1FA855);
+    color:#fff;
 }
-.dx-wa-callout.is-show{opacity:1;visibility:visible;transform:none}
-.dx-wa-callout::after{content:"";position:absolute;right:-5px;bottom:15px;width:10px;height:10px;background:#fff;border-right:1px solid var(--line);border-top:1px solid var(--line);transform:rotate(45deg);border-radius:2px}
-.dx-wa-callout__head{display:flex;align-items:center;gap:8px;margin-bottom:7px;padding-right:20px}
-.dx-wa-callout__av{width:26px;height:26px;flex:0 0 26px;border-radius:50%;display:grid;place-items:center;background:linear-gradient(150deg,#37D07A,#1FA855);color:#fff;font-size:.72rem}
-.dx-wa-callout__head b{display:block;font-family:var(--font-display);font-size:.84rem;color:var(--ink);line-height:1.25}
-.dx-wa-callout__head span span{display:flex;align-items:center;gap:5px;font-size:.62rem;font-weight:700;color:#1FA855;letter-spacing:.03em}
-.dx-wa-callout p{font-size:.76rem;line-height:1.5;color:var(--text)}
-.dx-wa-callout__cta{display:inline-flex;align-items:center;gap:6px;margin-top:8px;font-size:.75rem;font-weight:700;color:var(--navy-3)}
-.dx-wa-callout__cta i{transition:transform .35s var(--ease)}
-.dx-wa-callout__cta:hover i{transform:translateX(4px)}
-.dx-wa-callout__close{position:absolute;top:6px;right:6px;width:20px;height:20px;border:0;border-radius:50%;background:var(--mist);color:var(--muted);font-size:.6rem;cursor:pointer;display:grid;place-items:center;transition:background-color .3s var(--ease),color .3s var(--ease)}
-.dx-wa-callout__close:hover{background:var(--navy);color:#fff}
-@media (max-width:575.98px){
-  .dx-wa-callout{right:calc(14px + 62px);bottom:74px;width:min(206px,calc(100vw - 90px));padding:10px 12px}
-  .dx-wa-callout::after{display:none}
-  .dx-wa-callout p{font-size:.72rem}
-  .dx-wa-callout__head b{font-size:.8rem}
-  .dx-wa-callout__av{width:24px;height:24px;flex:0 0 24px;font-size:.68rem}
-}
-@media (prefers-reduced-motion:reduce){
-  .dx-wa-callout{transform:none!important;transition:none!important}
-  .dx-wa.is-attention{animation:none!important}
-}
+/*.dx-wa-float{*/
+/*  position:fixed;*/
+/*  right:20px;*/
+/*  bottom:20px;*/
+/*  width:58px;*/
+/*  height:58px;*/
+/*  z-index:1040;*/
+/*}*/
+/*.dx-wa{*/
+/*  position:absolute;*/
+/*  inset:0;*/
+/*  width:58px;*/
+/*  height:58px;*/
+/*  right:auto;*/
+/*  bottom:auto;*/
+/*  border-radius:50%;*/
+/*  display:grid;*/
+/*  place-items:center;*/
+/*  background:linear-gradient(150deg,#37D07A,#1FA855);*/
+/*  color:#fff;*/
+/*  font-size:1.6rem;*/
+/*  box-shadow:0 16px 34px -12px rgba(31,168,85,.75);*/
+/*  transition:transform .45s var(--ease),box-shadow .45s var(--ease)*/
+/*}*/
+/*.dx-wa:hover{color:#fff;transform:translateY(-4px) scale(1.06);box-shadow:0 22px 42px -12px rgba(31,168,85,.85)}*/
+/*.dx-wa::before{content:"";position:absolute;inset:0;border-radius:50%;border:2px solid rgba(55,208,122,.55);animation:dxPing 2.6s var(--ease) infinite}*/
+/*.dx-wa-callout{*/
+/*  position:absolute;z-index:1;*/
+/*  right:calc(100% + 8px);*/
+/*  bottom:0;*/
+/*  width:min(232px,calc(100vw - 100px));*/
+/*  padding:11px 13px 11px;border-radius:15px;*/
+/*  background:#fff;border:1px solid var(--line);box-shadow:var(--sh-2);*/
+/*  opacity:0;visibility:hidden;*/
+/*  transform:translate3d(14px,8px,0) scale(.92);transform-origin:100% 100%;*/
+/*  transition:opacity .4s var(--ease),transform .5s var(--ease-out),visibility .4s var(--ease)*/
+/*}*/
+/*.dx-wa-callout.is-show{opacity:1;visibility:visible;transform:none}*/
+/*.dx-wa-callout::after{content:"";position:absolute;right:-5px;bottom:15px;width:10px;height:10px;background:#fff;border-right:1px solid var(--line);border-top:1px solid var(--line);transform:rotate(45deg);border-radius:2px}*/
+/*.dx-wa-callout__head{display:flex;align-items:center;gap:8px;margin-bottom:7px;padding-right:20px}*/
+/*.dx-wa-callout__av{width:26px;height:26px;flex:0 0 26px;border-radius:50%;display:grid;place-items:center;background:linear-gradient(150deg,#37D07A,#1FA855);color:#fff;font-size:.72rem}*/
+/*.dx-wa-callout__head b{display:block;font-family:var(--font-display);font-size:.84rem;color:var(--ink);line-height:1.25}*/
+/*.dx-wa-callout__head span span{display:flex;align-items:center;gap:5px;font-size:.62rem;font-weight:700;color:#1FA855;letter-spacing:.03em}*/
+/*.dx-wa-callout p{font-size:.76rem;line-height:1.5;color:var(--text)}*/
+/*.dx-wa-callout__cta{display:inline-flex;align-items:center;gap:6px;margin-top:8px;font-size:.75rem;font-weight:700;color:var(--navy-3)}*/
+/*.dx-wa-callout__cta i{transition:transform .35s var(--ease)}*/
+/*.dx-wa-callout__cta:hover i{transform:translateX(4px)}*/
+/*.dx-wa-callout__close{position:absolute;top:6px;right:6px;width:20px;height:20px;border:0;border-radius:50%;background:var(--mist);color:var(--muted);font-size:.6rem;cursor:pointer;display:grid;place-items:center;transition:background-color .3s var(--ease),color .3s var(--ease)}*/
+/*.dx-wa-callout__close:hover{background:var(--navy);color:#fff}*/
+/*.dx-totop{*/
+/*  position:fixed;*/
+/*  right:20px;*/
+/*  bottom:90px;*/
+/*  z-index:1039;*/
+/*  width:46px;height:46px;border-radius:50%;border:1px solid var(--line-2);background:rgba(255,255,255,.94);color:var(--navy);*/
+/*  display:grid;place-items:center;cursor:pointer;box-shadow:var(--sh-2);*/
+/*  opacity:0;visibility:hidden;transform:translateY(12px);transition:opacity .4s var(--ease),transform .4s var(--ease),visibility .4s*/
+/*}*/
+/*.dx-totop.is-on{opacity:1;visibility:visible;transform:none}*/
+/*.dx-totop:hover{background:var(--navy);color:#fff}*/
+/*@media (max-width:575.98px){*/
+/*  .dx-wa-float{right:14px;bottom:14px;width:54px;height:54px}*/
+/*  .dx-wa{width:54px;height:54px;font-size:1.5rem}*/
+/*  .dx-wa-callout{right:calc(100% + 4px);bottom:0;width:min(206px,calc(100vw - 90px));padding:10px 12px}*/
+/*  .dx-wa-callout::after{display:none}*/
+/*  .dx-wa-callout p{font-size:.72rem}*/
+/*  .dx-wa-callout__head b{font-size:.8rem}*/
+/*  .dx-wa-callout__av{width:24px;height:24px;flex:0 0 24px;font-size:.68rem}*/
+/*  .dx-totop{width:42px;height:42px;right:14px;bottom:82px}*/
+/*}*/
+/*@media (prefers-reduced-motion:reduce){*/
+/*  .dx-wa-callout{transform:none!important;transition:none!important}*/
+/*}*/
 .dx-totop{
-  position:fixed;right:clamp(14px,2.4vw,28px);bottom:calc(clamp(14px,2.4vw,28px) + 70px);z-index:1039;
-  width:46px;height:46px;border-radius:50%;border:1px solid var(--line-2);background:rgba(255,255,255,.94);color:var(--navy);
-  display:grid;place-items:center;cursor:pointer;box-shadow:var(--sh-2);
-  opacity:0;visibility:hidden;transform:translateY(12px);transition:opacity .4s var(--ease),transform .4s var(--ease),visibility .4s
+    position:fixed;
+    right:20px;
+    bottom:88px;
+    z-index:1039;
 }
-.dx-totop.is-on{opacity:1;visibility:visible;transform:none}
-.dx-totop:hover{background:var(--navy);color:#fff}
-
 /* ---------- 10. ANIMATIONS ---------- */
 .dx-reveal{opacity:0;transform:translate3d(0,28px,0);transition:opacity .8s var(--ease) var(--d,0ms),transform .9s var(--ease) var(--d,0ms)}
 .dx-reveal.is-in{will-change:auto}
-/* reveal states move vertically only: a horizontal translate on a column that sits
-   flush with the container gutter can poke past the viewport while it waits to
-   animate in, which is what made some phones scroll sideways */
-.dx-reveal--left{transform:translate3d(0,26px,0) scale(.985)}
-.dx-reveal--right{transform:translate3d(0,26px,0) scale(.985)}
-.dx-reveal--zoom{transform:scale(.95)}
+.dx-reveal--left{transform:translate3d(-34px,0,0)}
+.dx-reveal--right{transform:translate3d(34px,0,0)}
+.dx-reveal--zoom{transform:scale(.94)}
 .dx-reveal.is-in{opacity:1;transform:none}
 .dx-stagger>*{opacity:0;transform:translate3d(0,30px,0);transition:opacity .75s var(--ease),transform .85s var(--ease)}
 .dx-stagger.is-in>*{opacity:1;transform:none}
@@ -1275,52 +1286,6 @@ textarea.dx-input{min-height:118px;resize:vertical}
   .dx-ba-card,.dx-ba__tab{transition:none!important}
 }
 
-/* ---------- 15. HORIZONTAL OVERFLOW ELIMINATION ----------
-   A horizontally scrollable page is what breaks fixed UI on real phones: the
-   navbar (and its hamburger), WhatsApp and back-to-top boxes end up anchored to a
-   viewport that is wider than the screen, so they drift out of the frame as you
-   scroll. The causes are removed rather than hidden:
-   (1) scroll-reveal states move vertically only — no translateX anywhere, so no
-       element reaches past the container gutter while waiting to animate in,
-   (2) the off-canvas mobile panel is parked at exactly 100% (not 104%),
-   (3) long unbreakable strings such as e-mail addresses may break inside flex and
-       grid rows.
-   Deliberately NO overflow clipping on html / body / main: clipping the root is
-   handled inconsistently by mobile browsers and can itself disturb
-   position:fixed and position:sticky. The layout above already cannot overflow. */
-/* long words / e-mail addresses inside flex or grid rows must be allowed to shrink */
-.dx-info__item>span,
-.dx-info__item>span>a,
-.dx-info__item p,
-.dx-footer__list a,
-.dx-footer__list span,
-.dx-faq__list li,
-.dx-faq__list li>a,
-.dx-cta__row>span,
-.dx-cta__row span span,
-.dx-hours li span,
-.dx-ba__foot span,
-.dx-footer__about{min-width:0;overflow-wrap:anywhere}
-/* never let a decorative/fixed layer widen the document */
-.dx-bg,.dx-scrim,.dx-panel,.dx-header,.dx-wa,.dx-totop,.dx-themes,.dx-wa-callout{max-width:100vw}
-
-/* ---------- 15b. PIN STRATEGY ----------
-   Default: the navbar is sticky (section 4) and cannot be detached by the Android
-   position:fixed bug. If a browser cannot do sticky either, the runtime adds
-   .dx-pin-fixed and the navbar returns to fixed with the body offset restored.
-   Floating buttons stay fixed by default; if the runtime measures that fixed boxes
-   are being anchored to the document instead of the screen, it adds
-   .dx-floats-tracked and positions them itself with scroll-tracked transforms. */
-html.dx-pin-fixed .dx-header{position:fixed;top:0;left:0;right:0}
-html.dx-pin-fixed body{padding-top:var(--hdr-h)!important}
-html.dx-floats-tracked .dx-wa,
-html.dx-floats-tracked .dx-totop,
-html.dx-floats-tracked .dx-themes,
-html.dx-floats-tracked .dx-wa-callout{
-  transition:opacity .35s var(--ease),visibility .35s var(--ease),box-shadow .4s var(--ease)!important;
-  will-change:transform
-}
-
 /* ---------- 14. SAFE-AREA & EDGE-DISPLAY FIXES ----------
    Phones with curved screens and gesture navigation (Vivo, Oppo, Samsung,
    Pixel…) render the page edge-to-edge because of viewport-fit=cover, so
@@ -1342,23 +1307,22 @@ html.dx-floats-tracked .dx-wa-callout{
 .dx-panel{padding-right:env(safe-area-inset-right,0px)}
 .dx-panel__head{padding-top:calc(18px + env(safe-area-inset-top,0px))}
 .dx-panel__foot{padding-bottom:calc(28px + env(safe-area-inset-bottom,0px))}
-/* Edge tokens — a GUARANTEED minimum gap from the physical screen edge.
-   Android Chrome reports 0px for env(safe-area-inset-*) on many phones even when
-   the page is drawn edge-to-edge (curved glass, punch-hole camera, gesture bar),
-   so a plain `env()` offset can silently become 0 and push fixed controls under
-   the system UI. max() keeps a real margin at all times and grows it when the
-   device does report insets. */
-:root{
-  --edge-r:max(18px,env(safe-area-inset-right,0px));
-  --edge-l:max(18px,env(safe-area-inset-left,0px));
-  --edge-b:max(18px,env(safe-area-inset-bottom,0px));
-  --edge-stack:70px
-}
 /* floating controls */
-.dx-wa{right:var(--edge-r);bottom:var(--edge-b)}
-.dx-totop{right:var(--edge-r);bottom:calc(var(--edge-b) + var(--edge-stack))}
-.dx-themes{left:var(--edge-l);bottom:var(--edge-b)}
-.dx-wa-callout{right:calc(var(--edge-r) + 66px);bottom:var(--edge-b)}
+.dx-wa-float{
+  right:calc(clamp(14px,2.4vw,28px) + env(safe-area-inset-right,0px));
+  bottom:calc(clamp(14px,2.4vw,28px) + env(safe-area-inset-bottom,0px))
+}
+.dx-totop{
+  right:calc(clamp(14px,2.4vw,28px) + env(safe-area-inset-right,0px));
+  bottom:calc(clamp(14px,2.4vw,28px) + 70px + env(safe-area-inset-bottom,0px))
+}
+.dx-themes{
+  left:calc(clamp(14px,2.4vw,28px) + env(safe-area-inset-left,0px));
+  bottom:calc(clamp(14px,2.4vw,28px) + env(safe-area-inset-bottom,0px))
+}
+.dx-wa-callout{
+  right:calc(100% + 8px);bottom:0
+}
 .dx-disclaimer{padding-bottom:calc(22px + env(safe-area-inset-bottom,0px))}
 .dx-skip{left:calc(16px + env(safe-area-inset-left,0px))}
 
@@ -1377,18 +1341,25 @@ html.dx-floats-tracked .dx-wa-callout{
   .dx-logo__mark{width:38px;height:38px;flex:0 0 38px;border-radius:12px}
   .dx-logo__mark svg{width:20px;height:20px}
   .dx-burger{width:44px;height:44px;flex:0 0 44px;border-radius:13px}
-  /* phones: bigger guaranteed clearance from the curved glass + gesture bar, and a
-     small cushion above the navbar so the hamburger never sits under the status bar */
-  :root{--edge-r:max(20px,env(safe-area-inset-right,0px));--edge-l:max(20px,env(safe-area-inset-left,0px));--edge-b:max(22px,env(safe-area-inset-bottom,0px));--edge-stack:64px}
-  .dx-container{
-    padding-left:calc(20px + env(safe-area-inset-left,0px));
-    padding-right:calc(20px + env(safe-area-inset-right,0px))
+  /* floating controls on small screens */
+  .dx-wa-float{right:calc(14px + env(safe-area-inset-right,0px));bottom:calc(14px + env(safe-area-inset-bottom,0px))}
+  .dx-totop{right:calc(14px + env(safe-area-inset-right,0px));bottom:calc(78px + env(safe-area-inset-bottom,0px))}
+  .dx-themes{left:calc(14px + env(safe-area-inset-left,0px));bottom:calc(14px + env(safe-area-inset-bottom,0px))}
+  .dx-wa-callout{
+    right:calc(100% + 4px);
+    bottom:0;
+    width:min(206px,calc(100vw - 90px - env(safe-area-inset-right,0px) - env(safe-area-inset-left,0px)))
   }
-  .dx-header{padding-top:calc(env(safe-area-inset-top,0px) + 3px)}
-  .dx-header::before{height:calc(env(safe-area-inset-top,0px) + 3px)}
-  .dx-panel__head{padding-top:calc(20px + env(safe-area-inset-top,0px))}
-  .dx-wa-callout{width:min(206px,calc(100vw - 92px - env(safe-area-inset-right,0px) - env(safe-area-inset-left,0px)))}
   .dx-themes__menu{max-width:calc(100vw - 34px - env(safe-area-inset-left,0px) - env(safe-area-inset-right,0px))}
+}
+
+/* ---------- STABLE SCROLLBAR / NAV FOOTPRINT ---------- */
+html,body{width:100%;max-width:100%;min-width:0}
+.dx-nav__in{width:100%;min-width:0}
+.dx-nav__actions{margin-left:auto;flex:0 0 auto;min-width:max-content}
+.dx-burger{flex:0 0 44px}
+@media (max-width:575.98px){
+  .dx-burger{width:44px;height:44px}
 }
 </style>
 </head>
@@ -2710,20 +2681,30 @@ html.dx-floats-tracked .dx-wa-callout{
 </footer>
 
 <!-- ============ FLOATING ACTIONS ============ -->
-<aside class="dx-wa-callout" id="dx-wa-callout" hidden>
-  <button class="dx-wa-callout__close" id="dx-wa-callout-close" type="button" aria-label="Dismiss this message"><i class="fa-solid fa-xmark" aria-hidden="true"></i></button>
-  <div class="dx-wa-callout__head">
-    <span class="dx-wa-callout__av"><i class="fa-solid fa-tooth" aria-hidden="true"></i></span>
-    <span>
-      <b>Aira Dental &middot; Reception</b>
-      <span><span class="dx-dotlive" aria-hidden="true"></span> Online now</span>
-    </span>
-  </div>
-  <p id="dx-wa-callout-text">Namaste! Would you like to book a dental appointment? Reply on WhatsApp and we will reserve a convenient slot for you today.</p>
-  <a class="dx-wa-callout__cta" href="#appointment" data-scroll>Book an appointment <i class="fa-solid fa-arrow-right" aria-hidden="true"></i></a>
-</aside>
-<a class="dx-wa" id="dx-wa-btn" href="https://wa.me/919832145670?text=Namaste%2C%20I%20would%20like%20to%20book%20a%20dental%20appointment%20at%20Aira%20Multispeciality%20Dental%20Clinic%2C%20Bardhaman." target="_blank" rel="noopener" aria-label="Chat with Aira Multispeciality Dental Clinic on WhatsApp">
-  <i class="fa-brands fa-whatsapp" aria-hidden="true"></i>
+<!--<div class="dx-wa-float">-->
+<!--  <aside class="dx-wa-callout" id="dx-wa-callout" hidden>-->
+<!--    <button class="dx-wa-callout__close" id="dx-wa-callout-close" type="button" aria-label="Dismiss this message"><i class="fa-solid fa-xmark" aria-hidden="true"></i></button>-->
+<!--    <div class="dx-wa-callout__head">-->
+<!--      <span class="dx-wa-callout__av"><i class="fa-solid fa-tooth" aria-hidden="true"></i></span>-->
+<!--      <span>-->
+<!--        <b>Aira Dental &middot; Reception</b>-->
+<!--        <span><span class="dx-dotlive" aria-hidden="true"></span> Online now</span>-->
+<!--      </span>-->
+<!--    </div>-->
+<!--    <p id="dx-wa-callout-text">Namaste! Would you like to book a dental appointment? Reply on WhatsApp and we will reserve a convenient slot for you today.</p>-->
+<!--    <a class="dx-wa-callout__cta" href="#appointment" data-scroll>Book an appointment <i class="fa-solid fa-arrow-right" aria-hidden="true"></i></a>-->
+<!--  </aside>-->
+<!--  <a class="dx-wa" id="dx-wa-btn" href="https://wa.me/919832145670?text=Namaste%2C%20I%20would%20like%20to%20book%20a%20dental%20appointment%20at%20Aira%20Multispeciality%20Dental%20Clinic%2C%20Bardhaman." target="_blank" rel="noopener" aria-label="Chat with Aira Multispeciality Dental Clinic on WhatsApp">-->
+<!--    <i class="fa-brands fa-whatsapp" aria-hidden="true"></i>-->
+<!--  </a>-->
+<!--</div>-->
+<a class="dx-wa"
+   id="dx-wa-btn"
+   href="https://wa.me/919832145670"
+   target="_blank"
+   rel="noopener"
+   aria-label="Chat on WhatsApp">
+    <i class="fa-brands fa-whatsapp" aria-hidden="true"></i>
 </a>
 <button class="dx-totop" id="dx-totop" type="button" aria-label="Back to top"><i class="fa-solid fa-arrow-up" aria-hidden="true"></i></button>
 
@@ -2753,16 +2734,14 @@ html.dx-floats-tracked .dx-wa-callout{
   var root = document.documentElement;
   var SCROLL_OFFSET = 0;
 
-  function setHeaderVar() {
-    if (!header) { SCROLL_OFFSET = 70; return; }
-    var h = Math.round(header.offsetHeight);
+  function headerHeight() {
+    return (header ? header.offsetHeight : 70) + 14;
+  }
+ function setHeaderVar() {
+    var h = header ? header.offsetHeight : 74;
     root.style.setProperty('--hdr-h', h + 'px');
     SCROLL_OFFSET = h + 14;
-    /* the navbar is sticky, so it already occupies its own space; only the
-       fixed-header fallback needs the body pushed down by the header height */
-    document.body.style.paddingTop = root.classList.contains('dx-pin-fixed') ? h + 'px' : '0px';
-  }
-  window.dxSetHeaderVar = setHeaderVar;
+}
 
   /* ---------- smooth scrolling with header offset ---------- */
   function scrollToTarget(target) {
@@ -2804,7 +2783,6 @@ html.dx-floats-tracked .dx-wa-callout{
     scrim.classList.add('is-open');
     document.body.classList.add('dx-lock');
     if (burger) burger.setAttribute('aria-expanded', 'true');
-    if (typeof window.dxSyncMenu === 'function') window.dxSyncMenu();
     if (closeBtn) closeBtn.focus();
   }
   function closeMenu() {
@@ -2815,7 +2793,6 @@ html.dx-floats-tracked .dx-wa-callout{
     scrim.classList.remove('is-open');
     document.body.classList.remove('dx-lock');
     if (burger) burger.setAttribute('aria-expanded', 'false');
-    if (typeof window.dxSyncMenu === 'function') window.dxSyncMenu();
     window.setTimeout(function () { if (!openState) scrim.hidden = true; }, 420);
     if (lastFocused && typeof lastFocused.focus === 'function') lastFocused.focus();
   }
@@ -3181,279 +3158,6 @@ html.dx-floats-tracked .dx-wa-callout{
   document.addEventListener('keydown', function (e) { if (e.key === 'Escape') close(); });
 })();
 
-/* ---------- floating control safety clamp ----------
-   Belt-and-braces for edge-to-edge Android browsers: after every layout change,
-   measure the fixed controls against the real client box and nudge any that would
-   be drawn outside it (zoom, desktop-mode scaling, scrollbar-less overflow, a host
-   that reports nothing for env(safe-area-inset-*)). Inline styles are cleared first
-   so the CSS edge tokens stay in charge whenever nothing is wrong. */
-(function floatGuard() {
-  var els = ['dx-wa-btn', 'dx-totop', 'dx-themes', 'dx-wa-callout']
-    .map(function (id) { return document.getElementById(id); })
-    .filter(Boolean);
-  if (!els.length) return;
-
-  var raf = null;
-  var GUARD = 8;
-
-  function clamp() {
-    /* the position guard is tracking the buttons itself — leave them alone */
-    if (document.documentElement.classList.contains('dx-floats-tracked')) return;
-    var vw = document.documentElement.clientWidth || window.innerWidth || 0;
-    var vh = (window.visualViewport && window.visualViewport.height) || window.innerHeight || 0;
-
-    els.forEach(function (el) {
-      if (el.hidden) return;
-      el.style.removeProperty('right');
-      el.style.removeProperty('left');
-      el.style.removeProperty('bottom');
-
-      var rect = el.getBoundingClientRect();
-      var cs = window.getComputedStyle(el);
-
-      if (rect.right > vw - 2) {
-        var right = parseFloat(cs.right) || 0;
-        el.style.right = Math.round(right + (rect.right - (vw - 2)) + GUARD) + 'px';
-      }
-      if (rect.left < 2) {
-        var left = parseFloat(cs.left) || 0;
-        el.style.left = Math.round(left + (2 - rect.left) + GUARD) + 'px';
-      }
-      if (rect.bottom > vh - 2) {
-        var bottom = parseFloat(cs.bottom) || 0;
-        el.style.bottom = Math.round(bottom + (rect.bottom - (vh - 2)) + GUARD) + 'px';
-      }
-    });
-  }
-
-  function run() {
-    if (raf) window.cancelAnimationFrame(raf);
-    raf = window.requestAnimationFrame(clamp);
-  }
-  window.dxClampFloats = run;
-
-  window.addEventListener('load', run);
-  window.addEventListener('resize', run, { passive: true });
-  window.addEventListener('orientationchange', function () { window.setTimeout(run, 320); });
-  if (window.visualViewport && window.visualViewport.addEventListener) {
-    window.visualViewport.addEventListener('resize', run);
-    window.visualViewport.addEventListener('scroll', run);
-  }
-  window.setTimeout(run, 1500);
-})();
-
-/* ---------- broken position:fixed detection & self-heal ----------
-   On a real top-level page some Android browsers anchor fixed boxes to the document
-   instead of the screen (more likely once the page can scroll sideways). Symptom:
-   the navbar scrolls away with the content and the floating buttons hang around the
-   document bottom — exactly what an iframe preview such as a reference link hides.
-   We look for the tell-tale: during a downward scroll the pinned element moves up by
-   almost exactly the scroll distance. Two consecutive detections switch the UI to a
-   sticky navbar plus scroll-tracked absolute buttons, which no browser can break. */
-(function positionGuard() {
-  var root = document.documentElement;
-  var header = document.getElementById('dx-header');
-  var floats = ['dx-wa-btn', 'dx-totop', 'dx-themes', 'dx-wa-callout']
-    .map(function (id) { return document.getElementById(id); })
-    .filter(Boolean);
-  if (!header && !floats.length) return;
-
-  var tracking = false, fixedHeader = false, strikes = 0;
-  var rafPlace = null, rafMeasure = null;
-  var DEBUG = window.location.search.indexOf('debug') > -1;
-
-  function metrics() {
-    var small = (root.clientWidth || window.innerWidth || 0) <= 575;
-    return { edge: small ? 20 : 18, bottom: small ? 22 : 18, stack: small ? 64 : 70, small: small, vw: root.clientWidth || window.innerWidth || 0 };
-  }
-
-  function viewportH() {
-    var vv = (window.visualViewport && window.visualViewport.height) || 0;
-    return Math.max(vv, window.innerHeight || 0);
-  }
-
-  /* position the floating buttons ourselves, glued to whatever viewport the user
-     actually sees — used only when the browser cannot pin fixed boxes properly */
-  function placeFloats() {
-    rafPlace = null;
-    if (!tracking) return;
-    var m = metrics(), vh = viewportH();
-    var x0 = window.pageXOffset || 0, y0 = window.pageYOffset || 0;
-    floats.forEach(function (el) {
-      if (el.hidden) return;
-      var w = el.offsetWidth, h = el.offsetHeight, gapX = 0, gapY = m.bottom;
-      if (el.id === 'dx-totop') gapY = m.bottom + m.stack;
-      if (el.id === 'dx-wa-callout') { gapX = 66; gapY = m.bottom + (m.small ? 52 : 0); }
-      var left = (el.id === 'dx-themes') ? m.edge : (m.vw - m.edge - gapX - w);
-      var top = vh - gapY - h;
-      el.style.transform = 'translate3d(' + Math.round(x0 + left) + 'px,' + Math.round(y0 + top) + 'px,0)';
-    });
-    placeOverlays();
-  }
-
-  function schedulePlace() {
-    if (rafPlace) return;
-    rafPlace = window.requestAnimationFrame(placeFloats);
-  }
-  window.dxPlaceFloats = function () { if (tracking) schedulePlace(); };
-
-  /* the mobile menu panel and its backdrop are fixed as well, so in tracked mode
-     they are placed explicitly: the panel slides in by changing this transform,
-     which the panel's own CSS transition still animates. */
-  function placeOverlays() {
-    if (!tracking) return;
-    var m = metrics(), vh = viewportH();
-    var x0 = window.pageXOffset || 0, y0 = window.pageYOffset || 0;
-    var scrim = document.getElementById('dx-scrim');
-    var panel = document.getElementById('dx-panel');
-    if (scrim) {
-      scrim.style.position = 'absolute';
-      scrim.style.left = '0';
-      scrim.style.top = '0';
-      scrim.style.right = 'auto';
-      scrim.style.bottom = 'auto';
-      scrim.style.width = m.vw + 'px';
-      scrim.style.height = vh + 'px';
-      scrim.style.transform = 'translate3d(' + Math.round(x0) + 'px,' + Math.round(y0) + 'px,0)';
-    }
-    if (panel) {
-      var pw = panel.offsetWidth;
-      var open = panel.classList.contains('is-open');
-      var left = open ? (x0 + m.vw - pw) : (x0 + m.vw + 8);
-      panel.style.position = 'absolute';
-      panel.style.left = '0';
-      panel.style.top = '0';
-      panel.style.right = 'auto';
-      panel.style.bottom = 'auto';
-      panel.style.height = vh + 'px';
-      panel.style.transform = 'translate3d(' + Math.round(left) + 'px,' + Math.round(y0) + 'px,0)';
-    }
-  }
-  window.dxSyncMenu = function () { if (tracking) placeOverlays(); };
-
-  function trackFloats() {
-    if (tracking) return;
-    tracking = true;
-    root.classList.add('dx-floats-tracked');
-    floats.forEach(function (el) {
-      el.style.position = 'absolute';
-      el.style.left = '0';
-      el.style.top = '0';
-      el.style.right = 'auto';
-      el.style.bottom = 'auto';
-    });
-    placeFloats();
-    window.addEventListener('scroll', schedulePlace, { passive: true });
-    window.addEventListener('resize', schedulePlace, { passive: true });
-    window.addEventListener('orientationchange', function () { window.setTimeout(placeFloats, 320); });
-    if (window.visualViewport && window.visualViewport.addEventListener) {
-      window.visualViewport.addEventListener('resize', schedulePlace);
-    }
-    if (DEBUG) console.info('[dx] fixed boxes are anchored to the document here — floating buttons are now scroll-tracked.');
-  }
-
-  /* fallback the other way: if sticky is not honoured, use a fixed navbar again */
-  function pinHeaderFixed() {
-    if (fixedHeader) return;
-    fixedHeader = true;
-    root.classList.add('dx-pin-fixed');
-    if (typeof window.dxSetHeaderVar === 'function') window.dxSetHeaderVar();
-    window.setTimeout(verifyHeader, 1500);
-    if (DEBUG) console.info('[dx] sticky navbar not honoured — switched the navbar to position:fixed.');
-  }
-
-  function verifyHeader() {
-    if (!header || !fixedHeader || window.pageYOffset < 420) return;
-    if (header.getBoundingClientRect().top < -200) {
-      /* neither strategy is honoured: sticky is the safer of the two, restore it */
-      root.classList.remove('dx-pin-fixed');
-      if (typeof window.dxSetHeaderVar === 'function') window.dxSetHeaderVar();
-      if (DEBUG) console.warn('[dx] fixed header failed too — reverted to the sticky navbar.');
-    }
-  }
-
-  /* Absolute measurements, no scroll-delta heuristics: this fires reliably whether
-     the user scrolls slowly, fast, or never scrolls at all. */
-  function measure() {
-    rafMeasure = null;
-
-    /* 1) navbar — a pinned header keeps its top at 0; if it travelled up with the
-          page, whichever pinning strategy is active has failed */
-    if (header && !fixedHeader && window.pageYOffset > 420 && header.getBoundingClientRect().top < -160) {
-      pinHeaderFixed();
-    }
-    verifyHeader();
-
-    /* 2) floating buttons — the palette button is always on screen and must sit its
-          own bottom offset above the viewport bottom. If it is drawn below the
-          screen (or in the wrong place entirely), fixed boxes are document-anchored. */
-    if (!tracking) {
-      var probe = document.getElementById('dx-themes') || document.getElementById('dx-wa-btn');
-      if (probe) {
-        var r = probe.getBoundingClientRect();
-        var cs = window.getComputedStyle(probe);
-        var expected = viewportH() - (parseFloat(cs.bottom) || 20);
-        var past = r.bottom - viewportH();
-        if (past > 40 || Math.abs(r.bottom - expected) > 170) {
-          strikes += 1;
-          if (strikes >= 2) trackFloats();
-        } else {
-          strikes = 0;
-        }
-      }
-    }
-  }
-
-  function scheduleMeasure() {
-    if (rafMeasure) return;
-    rafMeasure = window.requestAnimationFrame(measure);
-  }
-  window.dxMeasurePins = scheduleMeasure;
-
-  window.addEventListener('scroll', scheduleMeasure, { passive: true });
-  window.addEventListener('resize', function () { scheduleMeasure(); schedulePlace(); }, { passive: true });
-  window.addEventListener('orientationchange', function () {
-    window.setTimeout(function () { scheduleMeasure(); placeFloats(); }, 320);
-  });
-  document.addEventListener('visibilitychange', function () {
-    if (!document.hidden) window.setTimeout(function () { scheduleMeasure(); placeFloats(); }, 250);
-  });
-  if (window.visualViewport && window.visualViewport.addEventListener) {
-    window.visualViewport.addEventListener('resize', schedulePlace);
-  }
-  /* several timed passes catch late layout changes (web fonts, images, URL bar) */
-  [900, 2500, 6000, 12000, 25000].forEach(function (t) {
-    window.setTimeout(function () { measure(); placeFloats(); }, t);
-  });
-  window.addEventListener('load', function () { measure(); placeFloats(); });
-
-  /* ?pin forces the tracked mode — useful for verifying a fix on a real device */
-  if (window.location.search.indexOf('pin') > -1 && window.location.search.indexOf('nopin') === -1) {
-    window.setTimeout(trackFloats, 800);
-  }
-})();
-
-/* ---------- optional overflow audit ----------
-   Open the site with ?debug appended to the URL to list any element that still
-   reaches past the viewport edge. Silent otherwise, so it never affects the UI. */
-(function overflowAudit() {
-  if (String(window.location.search).indexOf('debug') === -1) return;
-  var vw = document.documentElement.clientWidth;
-  var doc = document.documentElement;
-  var out = ['[dx] viewport ' + vw + 'px | document scrollWidth ' + doc.scrollWidth + 'px'];
-  var suspects = [];
-  Array.prototype.forEach.call(document.body.querySelectorAll('*'), function (el) {
-    if (el.closest('.dx-bg') || el.closest('.dx-panel') || el.closest('.dx-wa-callout')) return;
-    var r = el.getBoundingClientRect();
-    if (r.width === 0 || r.height === 0) return;
-    if (r.right > vw + 1 || r.left < -1) {
-      suspects.push(el.tagName.toLowerCase() + (el.id ? '#' + el.id : '.' + String(el.className).split(' ')[0]) + ' → ' + Math.round(r.left) + '…' + Math.round(r.right));
-    }
-  });
-  if (suspects.length) console.warn(out[0] + '\nhorizontal overflow suspects:\n' + suspects.slice(0, 30).join('\n'));
-  else console.info(out[0] + '\nno horizontal overflow ✓');
-})();
-
 /* ---------- WhatsApp callout message: recalls visitors to book an appointment ---------- */
 (function waCallout() {
   var bubble = document.getElementById('dx-wa-callout');
@@ -3479,11 +3183,6 @@ html.dx-floats-tracked .dx-wa-callout{
     index = index + 1;
     bubble.hidden = false;
     window.requestAnimationFrame(function () { bubble.classList.add('is-show'); });
-    if (typeof window.dxClampFloats === 'function') window.setTimeout(window.dxClampFloats, 40);
-    if (typeof window.dxPlaceFloats === 'function') window.setTimeout(window.dxPlaceFloats, 40);
-    if (typeof window.dxMeasurePins === 'function') window.setTimeout(window.dxMeasurePins, 60);
-    btn.classList.add('is-attention');
-    window.setTimeout(function () { btn.classList.remove('is-attention'); }, 2600);
     shown = shown + 1;
     hideTimer = window.setTimeout(hide, 12000);
   }
